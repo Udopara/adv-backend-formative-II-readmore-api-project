@@ -1,5 +1,5 @@
-import Author from "../model/author.model.js";
-import Book from "../model/book.model.js"
+import Author from "../models/author.model.js";
+import Book from "../models/book.model.js"
 import mongoose from "mongoose"
 import "dotenv/config"
 
@@ -74,6 +74,8 @@ const books = [
 ];
 
 async function main() {
+  console.log("Seeding db!");
+
   for (const author of authors) {
     const createdAuthor = new Author({
       name: author.name,
