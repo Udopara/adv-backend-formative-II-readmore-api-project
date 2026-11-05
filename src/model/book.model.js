@@ -7,7 +7,10 @@ const bookSchema = new Schema({
   genre: String,
   price: Number,
   publishedYear: String,
-  author: String,
+  author: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Author",
+  },
 });
 
 const Book = model("Book", bookSchema);
