@@ -1,4 +1,5 @@
 import Author from "../models/author.model.js";
+import Book from "../models/book.model.js";
 import { buildErrorMessage } from "../libs/utils.js";
 
 export const getAuthors = async (req, res) => {
@@ -99,6 +100,24 @@ export const updateAuthor = async (req, res) => {
     await author.save();
 
     res.status(200).json(author);
+  } catch (error) {
+    res.status(500).json(buildErrorMessage(error.message));
+  }
+};
+
+export const getBooksbyAuthor = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const author = await Author.findById(id).exec();
+    if (!author) {
+      return res
+        .status(404)
+        .json(buildErrorMessage(`Author with id: ${id} not found`));
+    }
+
+    const books = await Book.find({ author: id }).populate("author");
+
+    return res.status(200).json(books);
   } catch (error) {
     res.status(500).json(buildErrorMessage(error.message));
   }
