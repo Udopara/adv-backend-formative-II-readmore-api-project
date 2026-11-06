@@ -1,4 +1,5 @@
 import Book from "../models/book.model.js";
+import Author from "../models/author.model.js";
 import { buildErrorMessage } from "../libs/utils.js";
 
 export const getBooks = async (req, res) => {
@@ -54,7 +55,14 @@ export const createBook = async (req, res) => {
       );
   }
 
+
   try {
+    const authorDoc = await Author.findById(author).exec();
+    if (!authorDoc) {
+      return res
+        .status(404)
+        .json(buildErrorMessage(`Author with id: ${author} not found`));
+    }
     const book = new Book({ title, genre, price, publishedYear, author });
     
     await book.save();
@@ -80,6 +88,15 @@ export const updateBook = async (req, res) => {
   }
 
   try {
+    if (author) {
+      const authorDoc = await Author.findById(author).exec();
+      if (!authorDoc) {
+        return res
+          .status(404)
+          .json(buildErrorMessage(`Author with id: ${author} not found`));
+      }
+    }
+    
     const book = await Book.findById(id);
 
     if (!book) {
