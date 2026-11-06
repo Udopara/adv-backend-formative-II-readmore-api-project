@@ -14,6 +14,11 @@ export const getBookbyId = async (req, res) => {
   const { id } = req.params;
   try {
     const book = await Book.findById(id).populate("author").exec();
+    if (!book) {
+      return res
+        .status(404)
+        .json(buildErrorMessage(`Book with id: ${id} not found`));
+    }
     res.status(200).json(book);
   } catch (error) {
     res.status(500).json(buildErrorMessage(error.message));
@@ -51,16 +56,14 @@ export const createBook = async (req, res) => {
 
   try {
     const book = new Book({ title, genre, price, publishedYear, author });
-
+    
     await book.save();
-
+    await book.populate("author");
     res.status(201).json(book);
   } catch (error) {
     res.status(500).json(buildErrorMessage(error.message));
   }
 };
-
-
 
 export const updateBook = async (req, res) => {
   const { id } = req.params;
@@ -92,7 +95,7 @@ export const updateBook = async (req, res) => {
     book.author = author ?? book.author;
 
     await book.save();
-
+    await book.populate("author");
     res.status(200).json(book);
   } catch (error) {
     res.status(500).json(buildErrorMessage(error.message));
