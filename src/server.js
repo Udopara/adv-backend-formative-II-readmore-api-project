@@ -3,6 +3,7 @@ import express from "express";
 import "dotenv/config";
 
 import authorRouter from "./routes/author.route.js"
+import bookRouter from "./routes/book.route.js";
 
 const app = express();
 
@@ -13,7 +14,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/author", authorRouter);
-
+app.use("/book", bookRouter);
 
 mongoose
   .connect(process.env.MONGODB_URI)
