@@ -3,7 +3,7 @@ import { buildErrorMessage } from "../libs/utils.js";
 
 export const getBooks = async (req, res) => {
   try {
-    const books = await Book.find({});
+    const books = await Book.find({}).populate("author");
     res.status(200).json(books);
   } catch (error) {
     res.status(500).json(buildErrorMessage(error.message));
@@ -13,7 +13,7 @@ export const getBooks = async (req, res) => {
 export const getBookbyId = async (req, res) => {
   const { id } = req.params;
   try {
-    const book = await Book.findById(id).exec();
+    const book = await Book.findById(id).populate("author").exec();
     res.status(200).json(book);
   } catch (error) {
     res.status(500).json(buildErrorMessage(error.message));
