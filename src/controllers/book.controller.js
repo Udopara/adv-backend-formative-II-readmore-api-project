@@ -5,8 +5,34 @@ import { buildErrorMessage } from "../libs/utils.js";
 const currentYear = new Date().getFullYear();
 
 export const getBooks = async (req, res) => {
+  const { genre, minPrice, maxPrice, author, search, sort, order } = req.query;
+
   try {
-    const books = await Book.find({}).populate("author");
+    const query = {};
+
+    if (genre) query.genre = genre;
+    if (author) query.author = author;
+
+    if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = Number(minPrice);
+      if (maxPrice) query.price.$lte = Number(maxPrice);
+    }
+
+    if (search) {
+      query.title = { $regex: search, $options: "i" };
+    }
+
+    const sortOptions = {};
+    if (sort) {
+      const validSortFields = ["price", "title", "publishedYear"];
+      if (validSortFields.includes(sort)) {
+        sortOptions[sort] = order === "desc" ? -1 : 1;
+      }
+    }
+
+    const books = await Book.find(query).sort(sortOptions).populate("author");
+
     res.status(200).json(books);
   } catch (error) {
     res.status(500).json(buildErrorMessage(error.message));
@@ -63,7 +89,10 @@ export const createBook = async (req, res) => {
       .json(buildErrorMessage("Price can not be less than or equal to zero"));
   }
 
-  if (publishedYear && (parseInt(publishedYear) < 1450 || parseInt(publishedYear) > currentYear)) {
+  if (
+    publishedYear &&
+    (parseInt(publishedYear) < 1450 || parseInt(publishedYear) > currentYear)
+  ) {
     return res
       .status(422)
       .json(
@@ -125,7 +154,10 @@ export const updateBook = async (req, res) => {
       .json(buildErrorMessage("Price can not be less than or equal to zero"));
   }
 
-  if (publishedYear && (parseInt(publishedYear) < 1450 || parseInt(publishedYear) > currentYear)) {
+  if (
+    publishedYear &&
+    (parseInt(publishedYear) < 1450 || parseInt(publishedYear) > currentYear)
+  ) {
     return res
       .status(422)
       .json(
