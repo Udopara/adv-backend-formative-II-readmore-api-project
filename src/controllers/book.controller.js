@@ -2,6 +2,8 @@ import Book from "../models/book.model.js";
 import Author from "../models/author.model.js";
 import { buildErrorMessage } from "../libs/utils.js";
 
+const currentYear = new Date().getFullYear();
+
 export const getBooks = async (req, res) => {
   try {
     const books = await Book.find({}).populate("author");
@@ -55,9 +57,25 @@ export const createBook = async (req, res) => {
       );
   }
 
+  if (price < 0) {
+    return res
+      .status(422)
+      .json(buildErrorMessage("Price can not be less than or equal to zero"));
+  }
+
+  if (publishedYear && (parseInt(publishedYear) < 1450 || parseInt(publishedYear) > currentYear)) {
+    return res
+      .status(422)
+      .json(
+        buildErrorMessage(
+          "Published Year can not be before 1940 or in the future",
+        ),
+      );
+  }
 
   try {
     const authorDoc = await Author.findById(author).exec();
+
     if (!authorDoc) {
       return res
         .status(404)
@@ -78,7 +96,7 @@ export const createBook = async (req, res) => {
     }
 
     const book = new Book({ title, genre, price, publishedYear, author });
-    
+
     await book.save();
     await book.populate("author");
     res.status(201).json(book);
@@ -101,18 +119,34 @@ export const updateBook = async (req, res) => {
       );
   }
 
+  if (price && price < 0) {
+    return res
+      .status(422)
+      .json(buildErrorMessage("Price can not be less than or equal to zero"));
+  }
+
+  if (publishedYear && (parseInt(publishedYear) < 1450 || parseInt(publishedYear) > currentYear)) {
+    return res
+      .status(422)
+      .json(
+        buildErrorMessage(
+          "Published Year can not be before 1940 or in the future",
+        ),
+      );
+  }
+
   try {
     if (author) {
-        const authorExists = await Author.exists({ _id: author });
-        if (!authorExists) {
-          return res
-            .status(404)
-            .json(buildErrorMessage(`Author with id: ${author} not found`));
-        }
+      const authorExists = await Author.exists({ _id: author });
+      if (!authorExists) {
+        return res
+          .status(404)
+          .json(buildErrorMessage(`Author with id: ${author} not found`));
+      }
     }
 
     if (author && title) {
-      const isDuplicate = await Book.exists({title, author});
+      const isDuplicate = await Book.exists({ title, author });
       if (isDuplicate) {
         return res
           .status(422)
