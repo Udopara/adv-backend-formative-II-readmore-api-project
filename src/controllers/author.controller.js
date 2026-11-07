@@ -35,6 +35,7 @@ export const deleteAuthor = async (req, res) => {
         .status(404)
         .json(buildErrorMessage(`No author with id: ${id} found`));
     }
+    await Book.deleteMany({ author: id });
     await Author.deleteOne({ _id: id });
     res.sendStatus(204);
   } catch (error) {
