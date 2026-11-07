@@ -63,6 +63,20 @@ export const createBook = async (req, res) => {
         .status(404)
         .json(buildErrorMessage(`Author with id: ${author} not found`));
     }
+
+    if (author && title) {
+      const isDuplicate = await Book.exists({ title, author });
+      if (isDuplicate) {
+        return res
+          .status(422)
+          .json(
+            buildErrorMessage(
+              `Author ${author} already has a book with title: ${title}`,
+            ),
+          );
+      }
+    }
+
     const book = new Book({ title, genre, price, publishedYear, author });
     
     await book.save();
@@ -89,14 +103,27 @@ export const updateBook = async (req, res) => {
 
   try {
     if (author) {
-      const authorDoc = await Author.findById(author).exec();
-      if (!authorDoc) {
+        const authorExists = await Author.exists({ _id: author });
+        if (!authorExists) {
+          return res
+            .status(404)
+            .json(buildErrorMessage(`Author with id: ${author} not found`));
+        }
+    }
+
+    if (author && title) {
+      const isDuplicate = await Book.exists({title, author});
+      if (isDuplicate) {
         return res
-          .status(404)
-          .json(buildErrorMessage(`Author with id: ${author} not found`));
+          .status(422)
+          .json(
+            buildErrorMessage(
+              `Author ${author} already has a book with title: ${title}`,
+            ),
+          );
       }
     }
-    
+
     const book = await Book.findById(id);
 
     if (!book) {
