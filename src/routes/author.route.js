@@ -1,5 +1,13 @@
 import express from "express";
-import { getAuthors, getAuthorbyId, deleteAuthor, createAuthor, updateAuthor, getBooksbyAuthor } from "../controllers/author.controller.js";
+import {
+  getAuthors,
+  getAuthorbyId,
+  deleteAuthor,
+  createAuthor,
+  updateAuthor,
+  getBooksbyAuthor,
+  getAuthorStats,
+} from "../controllers/author.controller.js";
 
 const router = express.Router()
 
@@ -14,5 +22,7 @@ router.post("/", createAuthor)
 router.put("/:id", updateAuthor);
 
 router.get("/:id/books", getBooksbyAuthor);
+
+router.get("/:id/stats", getAuthorStats);
 
 export default router
