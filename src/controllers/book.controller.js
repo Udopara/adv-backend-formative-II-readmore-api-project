@@ -31,9 +31,20 @@ export const getBooks = async (req, res) => {
       }
     }
 
-    const books = await Book.find(query).sort(sortOptions).populate("author");
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 100);
+    const skip = (page - 1) * limit;
 
-    res.status(200).json(books);
+    const [books, total] = await Promise.all([
+      Book.find(query)
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(limit)
+        .populate("author"),
+      Book.countDocuments(query),
+    ]);
+
+    res.status(200).json({ page, limit, total, results: books });
   } catch (error) {
     res.status(500).json(buildErrorMessage(error.message));
   }
