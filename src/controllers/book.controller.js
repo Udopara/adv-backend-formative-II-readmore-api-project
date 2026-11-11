@@ -4,6 +4,19 @@ import { buildErrorMessage } from "../libs/utils.js";
 
 const currentYear = new Date().getFullYear();
 
+const CASE_INSENSITIVE = { locale: "en", strength: 2 };
+
+const findDuplicateTitle = (title, author, excludeId) => {
+  const filter = { title, author };
+  if (excludeId) filter._id = { $ne: excludeId };
+  return Book.exists(filter).collation(CASE_INSENSITIVE);
+};
+
+const duplicateTitleMessage = (title) =>
+  buildErrorMessage(`This author already has a book titled "${title}"`);
+
+const isDuplicateKeyError = (error) => error?.code === 11000;
+
 export const getBooks = async (req, res) => {
   const { genre, minPrice, maxPrice, author, search, sort, order } = req.query;
 
@@ -118,21 +131,12 @@ export const createBook = async (req, res) => {
 
     if (!authorDoc) {
       return res
-        .status(404)
+        .status(400)
         .json(buildErrorMessage(`Author with id: ${author} not found`));
     }
 
-    if (author && title) {
-      const isDuplicate = await Book.exists({ title, author });
-      if (isDuplicate) {
-        return res
-          .status(409)
-          .json(
-            buildErrorMessage(
-              `Author ${author} already has a book with title: ${title}`,
-            ),
-          );
-      }
+    if (await findDuplicateTitle(title, author)) {
+      return res.status(409).json(duplicateTitleMessage(title));
     }
 
     const book = new Book({ title, genre, price, publishedYear, author });
@@ -141,6 +145,9 @@ export const createBook = async (req, res) => {
     await book.populate("author");
     res.status(201).json(book);
   } catch (error) {
+    if (isDuplicateKeyError(error)) {
+      return res.status(409).json(duplicateTitleMessage(title));
+    }
     res.status(500).json(buildErrorMessage(error.message));
   }
 };
@@ -178,26 +185,15 @@ export const updateBook = async (req, res) => {
       );
   }
 
+  let nextTitle = title;
+
   try {
     if (author) {
       const authorExists = await Author.exists({ _id: author });
       if (!authorExists) {
         return res
-          .status(404)
+          .status(400)
           .json(buildErrorMessage(`Author with id: ${author} not found`));
-      }
-    }
-
-    if (author && title) {
-      const isDuplicate = await Book.exists({ title, author });
-      if (isDuplicate) {
-        return res
-          .status(409)
-          .json(
-            buildErrorMessage(
-              `Author ${author} already has a book with title: ${title}`,
-            ),
-          );
       }
     }
 
@@ -209,16 +205,29 @@ export const updateBook = async (req, res) => {
         .json(buildErrorMessage(`No book with id: ${id} found`));
     }
 
-    book.title = title ?? book.title;
+    nextTitle = title ?? book.title;
+    const nextAuthor = author ?? book.author;
+
+    if (
+      (title || author) &&
+      (await findDuplicateTitle(nextTitle, nextAuthor, book._id))
+    ) {
+      return res.status(409).json(duplicateTitleMessage(nextTitle));
+    }
+
+    book.title = nextTitle;
     book.genre = genre ?? book.genre;
     book.price = price ?? book.price;
     book.publishedYear = publishedYear ?? book.publishedYear;
-    book.author = author ?? book.author;
+    book.author = nextAuthor;
 
     await book.save();
     await book.populate("author");
     res.status(200).json(book);
   } catch (error) {
+    if (isDuplicateKeyError(error)) {
+      return res.status(409).json(duplicateTitleMessage(nextTitle));
+    }
     res.status(500).json(buildErrorMessage(error.message));
   }
 };

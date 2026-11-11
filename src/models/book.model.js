@@ -13,6 +13,11 @@ const bookSchema = new Schema({
   },
 });
 
+bookSchema.index(
+  { author: 1, title: 1 },
+  { unique: true, collation: { locale: "en", strength: 2 } },
+);
+
 const Book = model("Book", bookSchema);
 
 export default Book;
