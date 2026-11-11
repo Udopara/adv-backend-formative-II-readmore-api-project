@@ -126,7 +126,7 @@ export const createBook = async (req, res) => {
       const isDuplicate = await Book.exists({ title, author });
       if (isDuplicate) {
         return res
-          .status(422)
+          .status(409)
           .json(
             buildErrorMessage(
               `Author ${author} already has a book with title: ${title}`,
@@ -192,7 +192,7 @@ export const updateBook = async (req, res) => {
       const isDuplicate = await Book.exists({ title, author });
       if (isDuplicate) {
         return res
-          .status(422)
+          .status(409)
           .json(
             buildErrorMessage(
               `Author ${author} already has a book with title: ${title}`,
